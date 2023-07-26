@@ -1,0 +1,377 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg preserveAspectRatio="xMinYMin" viewBox="0 0 1600 900"  xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <defs>
+    <clipPath id="light-clip">
+      <circle data-state="off" r="0" />
+    </clipPath>
+  </defs>
+
+  <rect clip-path="url(#light-clip)" fill="rgba(255, 255, 235, 1)" x="0" y="0" width="1600" height="900"></rect>
+  <rect clip-path="url(#light-clip)" id="darkness" fill="lightslategrey" x="800" y="0" width="800" height="900" />
+
+  <rect id="wall" fill="slategrey" stroke="none" x="800" y="0" width="30" height="900" />
+
+  <rect id="aperture-sizer" fill="lightgrey" x="800" width="30" y="380" height="140" />
+  <rect id="aperture" fill="rgba(255, 255, 235, 1)" x="800" y="400" width="30" height="100" />
+
+  <g clip-path="url(#light-clip)" id="beam-slices" stroke="none" fill="rgba(255, 255, 220, .25)">
+    <polyline />
+    <polyline />
+    <polyline />
+    <polyline />
+    <polyline />
+    <polyline />
+    <polyline />
+    <polyline />
+    <polyline />
+    <polyline />
+    <polyline />
+    <polyline />
+  </g>
+
+
+  <circle id="lamp-sizer" data-state="off" cx="400" cy="450" r="100" />
+  <circle id="lamp" data-state="off" cx="400" cy="450" r="80" />
+
+  <style>
+    svg {
+      background-color: hsla(210, 14%, 33%, 1);
+    }
+
+    #lamp:hover { cursor: grab; }
+    #lamp.dragging { cursor: grabbing; }
+    #lamp {
+      fill: white;
+      stroke: none;
+    }
+
+    #aperture-sizer:hover {
+      cursor: row-resize;
+    }
+
+    #lamp-sizer {
+      fill: rgb(255, 250, 220);
+      stroke: none;
+    }
+    #lamp-sizer:hover {
+      cursor: ew-resize;
+    }
+
+    [data-state="off"] #lamp {
+      fill: darkgrey;
+      opacity: 0.25;
+    }
+    [data-state="off"] #lamp-sizer {
+      fill: grey;
+      opacity: 0.25;
+    }
+    [data-state="off"] #aperture {
+      fill: hsla(210, 14%, 33%, 1);
+      /*opacity: 0.25;*/
+    }
+
+    #wall:hover {
+      cursor: ew-resize;
+    }
+
+    #beam-slices polyline {
+      mix-blend-mode: overlay;
+    }
+  </style>
+
+  <script type="text/javascript">//<![CDATA[
+    const state = {
+      lamp: {
+        on: false,
+        radius: 80,
+        x: 400,
+        y: 450
+      },
+      wall: {
+        x: 800
+      },
+      aperture: {
+        radius: 50
+      }
+    }
+
+    const viewBoxWidth = 1600
+    const viewBoxHeight = 900
+
+    const lamp = document.querySelector('#lamp')
+    const lampSizer = document.querySelector('#lamp-sizer')
+    const lampClip = document.querySelector('#light-clip circle')
+    const aperture = document.querySelector('#aperture')
+    const apertureSizer = document.querySelector('#aperture-sizer')
+    const wall = document.querySelector('#wall')
+
+    function updateCircle (element, circle) {
+      element.setAttribute('cx', circle.x)
+      element.setAttribute('cy', circle.y)
+
+      if (circle.radius) {
+        element.setAttribute('r', circle.radius)
+      }
+    }
+
+    function updatePolyline (element, points) {
+      const circuit = points.slice().concat(points[0])
+      element.setAttribute('points', circuit.map(({x, y}) => `${x},${y}`).join(' '))
+    }
+
+    const getAperturePoints = () => {
+      const x = state.wall.x + 15
+      const y = viewBoxHeight / 2 - state.aperture.radius
+      const h = state.aperture.radius * 2
+      return [ {x, y}, {x, y: y + h} ]
+    }
+
+    onDrag(lamp, ({scaledX, scaledY}) => {
+      state.lamp.x = scaledX
+      state.lamp.y = scaledY
+      update()
+    })
+
+    const lampToggle = animateAttribute(lampClip, 'r', t => Math.max(0, Math.min(t * t * 2000, 2000)), 50)
+
+    lamp.addEventListener('click', () => {
+      state.lamp.on = !state.lamp.on
+
+      //if (state.lamp.on) {
+      //  clickOn.play()
+      //} else {
+      //  clickOff.play()
+      //}
+
+      lampToggle()
+      update()
+    })
+
+    const update = () => {
+      const {x, y, radius} = state.lamp
+      const point = {x, y}
+
+      document.querySelector('svg').dataset.state = state.lamp.on ? 'on' : 'off'
+      // lampClip.dataset.state = state.lamp.on ? 'on' : 'off'
+      // lampSizer.dataset.state = state.lamp.on ? 'on' : 'off'
+
+      updateCircle(lamp, {x, y, radius})
+      updateCircle(lampSizer, {x, y, radius: radius + 20})
+      updateCircle(lampClip, {x, y})
+      updateBeams(point)
+
+      aperture.setAttribute('y', viewBoxHeight / 2 - state.aperture.radius)
+      aperture.setAttribute('height', state.aperture.radius * 2)
+
+      apertureSizer.setAttribute('y', viewBoxHeight / 2 - state.aperture.radius - 20)
+      apertureSizer.setAttribute('height', state.aperture.radius * 2 + 40)
+
+      const darkness = document.querySelector('#darkness')
+      aperture.setAttribute('x', state.wall.x)
+      apertureSizer.setAttribute('x', state.wall.x)
+      wall.setAttribute('x', state.wall.x)
+      darkness.setAttribute('x', state.wall.x)
+      darkness.setAttribute('width', viewBoxWidth - state.wall.x)
+    }
+
+    const updateBeams = (point) => {
+      const [apertureUpper, apertureLower] = getAperturePoints()
+      const beams = [...document.querySelectorAll('#beam-slices polyline')]
+      const [upper] = getTangentPoints(point, state.lamp.radius, apertureUpper)
+      const [, lower] = getTangentPoints(point, state.lamp.radius, apertureLower)
+
+      const dx = lower.x - upper.x
+      const dy = lower.y - upper.y
+
+      for (let i in beams) {
+        i = Number(i)
+        const t = i / beams.length
+        const a = {x: upper.x + t * dx, y: upper.y + t * dy}
+        const b = {x: upper.x + (1 - t) * dx, y: upper.y + (1 - t) * dy}
+        const projectedPoints = [
+          projectThrough(b, apertureUpper),
+          projectThrough(a, apertureLower)
+        ].sort((a, b) => a.y - b.y)
+
+        updatePolyline(beams[i], [
+          apertureUpper,
+          ...projectedPoints,
+          apertureLower
+        ])
+      }
+    }
+
+    update()
+
+    onDrag(apertureSizer, ({ scaledY }) => {
+      const mid = viewBoxHeight / 2
+      const dy = Math.abs(scaledY - mid) + 5
+
+      state.aperture.radius = dy
+      update()
+    })
+
+    onDrag(wall, ({ scaledX }) => {
+      state.wall.x = scaledX
+      update()
+    })
+
+    onDrag(lampSizer, ({scaledX, scaledY}) => {
+      const lampX = state.lamp.x
+      const lampY = state.lamp.y
+      const dx = Math.abs(lampX - scaledX)
+      const dy = Math.abs(lampY - scaledY)
+      const dist = Math.sqrt(dx*dx + dy*dy)
+      state.lamp.radius = dist
+      update()
+    })
+
+    const findParentNode = (element, selector) => {
+      let i = element.parentNode
+      while (i && !i.matches(selector)) {
+        i = i.parentNode
+      }
+
+      return i
+    }
+
+    function onDrag (element, listener) {
+      let dragging = false
+      let start
+
+      element.addEventListener('click', (event) => {
+        if (dragging) {
+          event.stopImmediatePropagation()
+        }
+      })
+
+      function coords (event) {
+        const svg = findParentNode(element, 'svg')
+        const [viewBoxWidth, viewBoxHeight] = svg.getAttribute('viewBox').split(' ').slice(2).map(Number)
+        const { width, height, top, left } = svg.getBoundingClientRect()
+        const { clientX, clientY } = event.type === 'touchmove'
+          ? event.touches[0]
+          : event
+
+        return [
+          (clientX - left) / width * viewBoxWidth,
+          (clientY - top) / height * viewBoxHeight
+        ]
+      }
+
+      function move (event) {
+        const [scaledX, scaledY] = coords(event)
+        const deltaX = scaledX - start[0]
+        const deltaY = scaledY - start[1]
+        const distance = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2))
+
+        dragging = true
+        listener(Object.assign(event, {
+          scaledX,
+          scaledY,
+          deltaX,
+          deltaY,
+          distance
+        }))
+      }
+
+      function attach (event) {
+        start = coords(event)
+        element.classList.add('dragging')
+        window.addEventListener('mousemove', move)
+        window.addEventListener('touchmove', move)
+        window.addEventListener('mouseup', detach)
+        window.addEventListener('touchend', detach)
+
+        event.preventDefault()
+      }
+
+      function detach () {
+        setTimeout(() => {dragging = false})
+        element.classList.remove('dragging')
+        window.removeEventListener('mousemove', move)
+        window.removeEventListener('touchmove', move)
+        window.removeEventListener('mouseup', detach)
+        window.removeEventListener('touchend', detach)
+      }
+
+      element.addEventListener('mousedown', attach)
+      element.addEventListener('touchstart', attach, { passive: false })
+    }
+
+    function getTangentPoints (center, radius, point) {
+      const dx = point.x - center.x
+      const dy = point.y - center.y
+      const angle = Math.atan2(dy, dx)
+      const hypotenuse = Math.sqrt(dx*dx + dy*dy)
+      const tangentLength = Math.sqrt(Math.pow(hypotenuse, 2) - Math.pow(radius, 2))
+      const tangentAngle = Math.acos((
+        Math.pow(hypotenuse, 2)
+        + Math.pow(radius, 2)
+        - Math.pow(tangentLength, 2)
+      ) / (
+        2 * radius * hypotenuse
+      ))
+
+      const a1 = angle - tangentAngle
+      const a2 = angle + tangentAngle
+
+      return [
+        { x: center.x + radius * Math.cos(a1), y: center.y + radius * Math.sin(a1) },
+        { x: center.x + radius * Math.cos(a2), y: center.y + radius * Math.sin(a2) }
+      ]
+    }
+
+    function projectThrough (source, dest) {
+      const dx = dest.x - source.x
+      const dy = dest.y - source.y
+      const dist = 100
+
+      return {
+        x: source.x + dx * dist,
+        y: source.y + dy * dist
+      }
+    }
+
+    function animateAttribute (element, attribute, getValue, duration=100) {
+      let direction = 1
+      let start_
+
+      function start (newDuration, newDirection) {
+        start_ = Date.now()
+        if (newDuration) {
+          duration = newDuration
+        }
+        if (newDirection) {
+          direction = newDirection
+        }
+
+        animate()
+      }
+
+      function stop () {
+        start_ = undefined
+      }
+
+      function animate () {
+        const now = Date.now()
+        const delta = now - start_
+        const f = delta / duration
+        const t = Math.max(0, Math.min(1, direction > 0 ? f : (1 - f)))
+
+        if ((t < 1 && direction > 0) || (t > 0 && direction < 0)) {
+          requestAnimationFrame(animate)
+        } else {
+          direction *= -1
+          stop()
+        }
+
+        element.setAttribute(attribute, getValue(t))
+      }
+
+      return start
+    }
+  //]]>
+  </script>
+</svg>

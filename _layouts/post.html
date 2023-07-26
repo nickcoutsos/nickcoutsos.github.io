@@ -1,0 +1,22 @@
+---
+layout: default
+---
+
+<article>
+  {% include header.html %}
+  <main>
+    <h1 class="post-title">{{ page.title }}</h1>
+    <p class="lead">{{ page.lead | markdownify }}</p>
+    {% if page.heroImageUrl %}
+    <p>
+      <img
+        src="{{ page.heroImageUrl }}"
+        alt="{{ page.heroImageAltText | default: page.title }}"
+        title="{{ page.heroImageAltText | default: page.title }}"
+      />
+    </p>
+    {% endif %}
+    {{ content }}
+  </main>
+  {% include footer.html %}
+</article>

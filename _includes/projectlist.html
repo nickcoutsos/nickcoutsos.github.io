@@ -1,0 +1,43 @@
+<div>
+  <style>
+    .project-summary { margin: 2.5em 0; }
+    .project-summary img {
+      float: left;
+      height: 5em;
+      aspect-ratio: 4/3;
+      margin: 0.5em 1em 0 0;
+      object-fit: cover;
+    }
+    .project-summary:nth-child(even) img {
+      float: right;
+      margin: 0.5em 0 0 1em;
+    }
+    .project-shortdesc {
+      font-size: 80%;
+    }
+  </style>
+  {% assign projects = site.projects | sort: "timeframe.start" | reverse %}
+  {% for project in projects %}
+  <div class="project-summary">
+    <a href="{{ project.url | url }}">
+      <strong>{{ project.title }}</strong>
+    </a>
+
+    <span class="project-shortdesc">{{ project.shortestDescription }}</span>
+
+    {% if project.timeframe %} •
+      {{ project.timeframe.start }}
+      {% if project.timeframe.finish %} - {{ project.timeframe.finish }}{% endif %}
+    {% endif %}
+
+    {% if project.thumbnailUrl %}
+    <a href="{{ project.url | url }}">
+      <img src="{{project.thumbnailUrl}}" />
+    </a>
+    {% endif %}
+
+    {{project.lead | markdownify}}
+  </div>
+  {% endfor %}
+
+</div>  

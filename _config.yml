@@ -1,0 +1,41 @@
+# site settings
+
+title: Nick Coutsos
+description: Software Engineer
+taglong: Software engineer and hobbyist maker
+tagshort: Projects
+url: https://nickcoutsos.github.io
+baseurl: ""
+permalink: pretty
+repo: https://github.com/nickcoutsos/nickcoutsos.github.io
+collections:
+  projects:
+    output: true
+
+# author settings
+
+author:
+  name: Nick Coutsos
+  email: nick@coutsos.com
+photo: /assets/jpg/photo.jpg
+
+# build settings
+
+exclude:
+  - LICENSE
+  - README.md
+
+plugins:
+  - jekyll-gist
+  # - jekyll-paginate-v2
+  # - jekyll-sitemap
+
+whitelist:
+  - jekyll-sitemap
+
+sass:
+  sass_dir: _sass
+  sourcemap: never
+
+autopages:
+  enabled: false
