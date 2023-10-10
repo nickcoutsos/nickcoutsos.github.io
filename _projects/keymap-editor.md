@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Keymap Editor
-shortestDescription: passion project/objesssion
+shortestDescription: passion project/obsession
 lead: A web-based editor for ZMK keymaps with a GitHub integration
 timeframe:
   start: 2020
